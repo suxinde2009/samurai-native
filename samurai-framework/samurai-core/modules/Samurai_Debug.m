@@ -207,6 +207,7 @@
 
 @def_prop_readonly( NSArray *,	callstack );
 
+#if __SAMURAI_DEBUG__
 static void __uncaughtExceptionHandler( NSException * exception )
 {
 	fprintf( stderr, "\nUncaught exception: %s\n%s",
@@ -215,13 +216,16 @@ static void __uncaughtExceptionHandler( NSException * exception )
 
 	TRAP();
 }
+#endif	// #if __SAMURAI_DEBUG__
 
+#if __SAMURAI_DEBUG__
 static void __uncaughtSignalHandler( int signal )
 {
 	fprintf( stderr, "\nUncaught signal: %d", signal );
 
 	TRAP();
 }
+#endif	// #if __SAMURAI_DEBUG__
 
 + (void)classAutoLoad
 {
@@ -331,11 +335,6 @@ static void __uncaughtSignalHandler( int signal )
 
 - (void)dump
 {
-#if __SAMURAI_DEBUG__
-	
-	INFO( [self description] );
-	
-#endif	// #if __SAMURAI_DEBUG__
 }
 
 @end
@@ -349,6 +348,10 @@ static void __uncaughtSignalHandler( int signal )
 #if __SAMURAI_TESTING__
 
 TEST_CASE( Core, Debug )
+{
+}
+
+DESCRIBE( before )
 {
 }
 
@@ -372,6 +375,10 @@ DESCRIBE( backtrace )
 	[[SamuraiDebugger sharedInstance] trace:0];
 	[[SamuraiDebugger sharedInstance] trace:1];
 	[[SamuraiDebugger sharedInstance] trace:100000];
+}
+
+DESCRIBE( after )
+{
 }
 
 TEST_CASE_END

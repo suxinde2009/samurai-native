@@ -66,6 +66,7 @@
 - (NSString *)URLEncoding;
 - (NSString *)URLDecoding;
 
+- (NSString *)flat;
 - (NSString *)trim;
 - (NSString *)unwrap;
 - (NSString *)normalize;
@@ -87,6 +88,7 @@
 - (BOOL)isValueOf:(NSArray *)array caseInsens:(BOOL)caseInsens;
 
 - (BOOL)isNumber;
+- (BOOL)isNumberWithUnit:(NSString *)unit;
 - (BOOL)isEmail;
 - (BOOL)isUrl;
 - (BOOL)isIPAddress;

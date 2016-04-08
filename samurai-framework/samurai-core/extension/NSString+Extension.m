@@ -377,24 +377,30 @@
 }
 
 - (NSString *)URLEncoding
-{  
-	return (__bridge_transfer NSString *)
-	CFURLCreateStringByAddingPercentEscapes( kCFAllocatorDefault, (CFStringRef)self, NULL, (CFStringRef)@"!*'();:@&=+$,/?%#[]", kCFStringEncodingUTF8 );
+{
+	return [self stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet characterSetWithCharactersInString:@"!*'();:@&=+$,/?%#[]"]];
 }
 
 - (NSString *)URLDecoding
 {
 	NSMutableString * string = [NSMutableString stringWithString:self];
-    [string replaceOccurrencesOfString:@"+"  
+
+	[string replaceOccurrencesOfString:@"+"
 							withString:@" "  
 							   options:NSLiteralSearch  
-								 range:NSMakeRange(0, [string length])];  
-    return [string stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+								 range:NSMakeRange(0, [string length])];
+
+	return [string stringByRemovingPercentEncoding];
 }
 
 - (NSString *)trim
 {
 	return [self stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
+- (NSString *)flat
+{
+	return [self stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
 }
 
 - (NSString *)unwrap
@@ -545,7 +551,15 @@
 
 - (BOOL)isNumber
 {
-	NSString *		regex = @"-?[0-9]+";
+	NSString *		regex = @"-?[0-9.]+";
+	NSPredicate *	pred = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", regex];
+	
+	return [pred evaluateWithObject:self];
+}
+
+- (BOOL)isNumberWithUnit:(NSString *)unit
+{
+	NSString *		regex = [NSString stringWithFormat:@"-?[0-9.]+%@", unit];
 	NSPredicate *	pred = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", regex];
 	
 	return [pred evaluateWithObject:self];
@@ -727,8 +741,15 @@
 #if __SAMURAI_TESTING__
 
 TEST_CASE( Core, NSString_Extension )
+
+DESCRIBE( before )
 {
 }
+
+DESCRIBE( after )
+{
+}
+
 TEST_CASE_END
 
 #endif	// #if __SAMURAI_TESTING__

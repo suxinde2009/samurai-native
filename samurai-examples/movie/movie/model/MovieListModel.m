@@ -8,6 +8,9 @@
 
 #import "MovieListModel.h"
 
+@interface MovieListModel ()
+@end
+
 @implementation MovieListModel
 
 @def_signal( eventLoading )
@@ -84,7 +87,7 @@
     
     api.req.page_limit = 10;
     
-    api.whenUpdate = ^( LIST_MOVIES_RESPONSE * resp, id error ) {
+    api.whenUpdated = ^( LIST_MOVIES_RESPONSE * resp, id error ) {
         
         @strongify( self );
         

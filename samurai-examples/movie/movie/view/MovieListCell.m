@@ -17,15 +17,18 @@
 
 @implementation MovieListCell
 
-- (void)unserialize:(id)obj
+- (void)store_unserialize:(id)obj
 {
-    [super unserialize:obj];
+    [super store_unserialize:obj];
 
     if ( obj )
     {
         NSInteger score = [obj[@"critics"] integerValue];
-        self.critics_label.textColor = [UIColor mv_colorWithScore:score];
+
+        self.critics_label.htmlRenderer.customStyle.color = cssColor( [UIColor mv_colorWithScore:score] );
         self.critics_label.text = [NSString stringWithFormat:@"critics %@%%", obj[@"critics"]];
+
+		[self.critics_label restyle];
     }
 }
 

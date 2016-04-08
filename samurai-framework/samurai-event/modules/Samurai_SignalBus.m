@@ -116,8 +116,12 @@
 	{
 		signal.arrived = YES;
 	}
-	
+
+#if __SAMURAI_DEBUG__
+#if __SAMURAI_LOGGING__
 	NSString * newline = @"\n   > ";
+#endif	// #if __SAMURAI_LOGGING__
+#endif	// #if __SAMURAI_DEBUG__
 
 	if ( signal.arrived )
 	{
@@ -240,23 +244,54 @@
 				
 				if ( 1 == responders.count )
 				{
-					[self forward:signal to:[responders objectAtIndex:0]];
+					if ( NO == signal.dead )
+					{
+						[signal log:signal.target];
+						
+						signal.target = [responders objectAtIndex:0];
+						signal.sending = YES;
+					
+						[self routes:signal];
+					}
+					
+				//	[self forward:signal to:[responders objectAtIndex:0]];
 				}
 				else
 				{
 					for ( NSObject * responder in responders )
 					{
 						SamuraiSignal * clonedSignal = [signal clone];
+						
 						if ( clonedSignal )
 						{
-							[self forward:clonedSignal to:responder];
+							if ( NO == clonedSignal.dead )
+							{
+								[clonedSignal log:clonedSignal.target];
+								
+								clonedSignal.target = responder;
+								clonedSignal.sending = YES;
+								
+								[self routes:clonedSignal];
+							}
+
+						//	[self forward:clonedSignal to:responder];
 						}
 					}
 				}
 			}
 			else
 			{
-				[self forward:signal to:object];
+				if ( NO == signal.dead )
+				{
+					[signal log:signal.target];
+					
+					signal.target = object;
+					signal.sending = YES;
+					
+					[self routes:signal];
+				}
+				
+			//	[self forward:signal to:object];
 			}
 		}
 	}
@@ -336,7 +371,9 @@
 	
 	for ( Class targetClass in classes )
 	{
-		NSString * cacheName = nil;
+		NSString *	cacheName = nil;
+		NSString *	cachedSelectorName = nil;
+		SEL			cachedSelector = nil;
 
 		if ( prioSelector )
 		{
@@ -347,10 +384,12 @@
 			cacheName = [NSString stringWithFormat:@"%@/%@", signal.name, [targetClass description]];
 		}
 		
-		NSString * cachedSelectorName = [_handlers objectForKey:cacheName];
+		cachedSelectorName = [_handlers objectForKey:cacheName];
+
 		if ( cachedSelectorName )
 		{
-			SEL cachedSelector = NSSelectorFromString( cachedSelectorName );
+			cachedSelector = NSSelectorFromString( cachedSelectorName );
+
 			if ( cachedSelector )
 			{
 				BOOL hit = [self signal:signal perform:cachedSelector class:targetClass target:target];
@@ -368,6 +407,75 @@
 			SEL			selector = nil;
 			BOOL		performed = NO;
 
+		// native selector
+
+			if ( [signal.name hasPrefix:@"signal."] )
+			{
+				if ( NO == performed )
+				{
+					selectorName = [signal.name substringFromIndex:@"signal.".length];
+					selectorName = [selectorName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
+					selectorName = [selectorName stringByReplacingOccurrencesOfString:@"." withString:@"_"];
+					selectorName = [selectorName stringByReplacingOccurrencesOfString:@"/" withString:@"_"];
+					
+					selector = NSSelectorFromString( selectorName );
+					
+					performed = [self signal:signal perform:selector class:targetClass target:target];
+					if ( performed )
+					{
+						[_handlers setObject:selectorName forKey:cacheName];
+						break;
+					}
+				}
+			}
+			
+			if ( [signal.name hasPrefix:@"selector."] )
+			{
+				if ( NO == performed )
+				{
+					selectorName = [signal.name substringFromIndex:@"selector.".length];
+//					selectorName = [selectorName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
+//					selectorName = [selectorName stringByReplacingOccurrencesOfString:@"." withString:@"_"];
+//					selectorName = [selectorName stringByReplacingOccurrencesOfString:@"/" withString:@"_"];
+					
+					selector = NSSelectorFromString( selectorName );
+					
+					performed = [self signal:signal perform:selector class:targetClass target:target];
+					if ( performed )
+					{
+						[_handlers setObject:selectorName forKey:cacheName];
+						break;
+					}
+				}
+			}
+
+			if ( NO == performed )
+			{
+				if ( [signal.name hasSuffix:@":"] )
+				{
+					selectorName = signal.name;
+				}
+				else
+				{
+					selectorName = [NSString stringWithFormat:@"%@:", signal.name];
+				}
+				
+				selectorName = [selectorName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
+				selectorName = [selectorName stringByReplacingOccurrencesOfString:@"." withString:@"_"];
+				selectorName = [selectorName stringByReplacingOccurrencesOfString:@"/" withString:@"_"];
+				
+				selector = NSSelectorFromString( selectorName );
+				
+				performed = [self signal:signal perform:selector class:targetClass target:target];
+				if ( performed )
+				{
+					[_handlers setObject:selectorName forKey:cacheName];
+					break;
+				}
+			}
+			
+		// high priority selector
+			
 			if ( prioAlias )
 			{
 				if ( [prioAlias isKindOfClass:[NSArray class]] )
@@ -455,6 +563,8 @@
 			{
 				break;
 			}
+			
+		// signal selector
 
 			if ( prioSelector )
 			{
@@ -552,21 +662,6 @@
 				if ( (signalMethod && signalMethod.length) && signalMethod2 && signalMethod2.length )
 				{
 					selectorName = [NSString stringWithFormat:@"handleSignal____%@____%@____%@:", [rtti description], signalMethod, signalMethod2];
-					selector = NSSelectorFromString( selectorName );
-					
-					performed = [self signal:signal perform:selector class:targetClass target:target];
-					if ( performed )
-					{
-						[_handlers setObject:selectorName forKey:cacheName];
-						break;
-					}
-				}
-
-				// eg. handleSignal( Class, Signal )
-				
-				if ( signalMethod && signalMethod.length )
-				{
-					selectorName = [NSString stringWithFormat:@"handleSignal____%@____%@:", [rtti description], signalMethod];
 					selector = NSSelectorFromString( selectorName );
 					
 					performed = [self signal:signal perform:selector class:targetClass target:target];
@@ -740,9 +835,15 @@
 #if __SAMURAI_TESTING__
 
 TEST_CASE( Event, SignalBus )
+
+DESCRIBE( before )
 {
-//	TODO( "test case" )
 }
+
+DESCRIBE( after )
+{
+}
+
 TEST_CASE_END
 
 #endif	// #if __SAMURAI_TESTING__

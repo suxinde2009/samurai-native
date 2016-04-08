@@ -18,14 +18,17 @@
 
 @implementation MovieCell
 
-- (void)unserialize:(id)obj
+- (void)store_unserialize:(id)obj
 {
-    [super unserialize:obj];
+    [super store_unserialize:obj];
     
     if ( obj )
     {
-        self.critics_label.textColor = [UIColor mv_colorWithScore:[obj[@"critics"] integerValue]];
-        self.audience_label.textColor = [UIColor mv_colorWithScore:[obj[@"audience"] integerValue]];
+        self.critics_label.htmlRenderer.customStyle.color = cssColor( [UIColor mv_colorWithScore:[obj[@"critics"] integerValue]] );
+        self.audience_label.htmlRenderer.customStyle.color = cssColor( [UIColor mv_colorWithScore:[obj[@"audience"] integerValue]] );
+
+		[self.critics_label restyle];
+		[self.audience_label restyle];
     }
 }
 

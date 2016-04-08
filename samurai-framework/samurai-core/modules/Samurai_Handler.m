@@ -30,6 +30,7 @@
 
 #import "Samurai_Handler.h"
 #import "Samurai_Trigger.h"
+#import "Samurai_UnitTest.h"
 
 #import "_pragma_push.h"
 
@@ -44,22 +45,6 @@ typedef void (^ __handlerBlockType )( id object );
 #pragma mark -
 
 @implementation NSObject(BlockHandler)
-
-hookAfter( load, blockHandler )
-{
-}
-
-hookBefore( unload, blockHandler )
-{
-	SamuraiHandler * handler = [self getAssociatedObjectForKey:"blockHandler"];
-
-	if ( handler )
-	{
-		[handler removeAllHandlers];
-
-		[self removeAssociatedObjectForKey:"blockHandler"];
-	}
-}
 
 - (SamuraiHandler *)blockHandlerOrCreate
 {
@@ -83,6 +68,7 @@ hookBefore( unload, blockHandler )
 - (void)addBlock:(id)block forName:(NSString *)name
 {
 	SamuraiHandler * handler = [self blockHandlerOrCreate];
+	
 	if ( handler )
 	{
 		[handler addHandler:block forName:name];
@@ -92,10 +78,23 @@ hookBefore( unload, blockHandler )
 - (void)removeBlockForName:(NSString *)name
 {
 	SamuraiHandler * handler = [self blockHandler];
+	
 	if ( handler )
 	{
 		[handler removeHandlerForName:name];
 	}
+}
+
+- (void)removeAllBlocks
+{
+	SamuraiHandler * handler = [self blockHandler];
+	
+	if ( handler )
+	{
+		[handler removeAllHandlers];
+	}
+	
+	[self removeAssociatedObjectForKey:"blockHandler"];
 }
 
 @end
@@ -179,9 +178,16 @@ hookBefore( unload, blockHandler )
 
 #if __SAMURAI_TESTING__
 
-TEST_CASE( Core, BlockHandler )
+TEST_CASE( Core, Handler )
+
+DESCRIBE( before )
 {
 }
+
+DESCRIBE( after )
+{
+}
+
 TEST_CASE_END
 
 #endif	// #if __SAMURAI_TESTING__

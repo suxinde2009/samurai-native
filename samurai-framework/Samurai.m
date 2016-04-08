@@ -167,11 +167,8 @@
 		@"__ClassLoader_Config",
 		@"__ClassLoader_Core",
 		@"__ClassLoader_Event",
-	//	@"__ClassLoader_Lang",
-	//	@"__ClassLoader_Storage",
-	//	@"__ClassLoader_Network",
-		@"__ClassLoader_Model",
-		
+		@"__ClassLoader_Module",
+
 	#if (TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR)
 		@"__ClassLoader_UI",
 		@"__ClassLoader_Service"

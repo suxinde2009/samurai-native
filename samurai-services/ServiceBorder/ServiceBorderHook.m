@@ -131,7 +131,7 @@ static BOOL __enabled = NO;
 		return;
 	
 	ServiceBorderLayer * borderLayer = nil;
-
+	
 	for ( CALayer * sublayer in container.layer.sublayers )
 	{
 		if ( [sublayer isKindOfClass:[ServiceBorderLayer class]] )
@@ -140,7 +140,7 @@ static BOOL __enabled = NO;
 			break;
 		}
 	}
-
+	
 	if ( nil == borderLayer )
 	{
 		borderLayer = [[ServiceBorderLayer alloc] init];
@@ -148,13 +148,13 @@ static BOOL __enabled = NO;
 		
 		borderLayer.hidden = __enabled ? NO : YES;
 		borderLayer.frame = CGRectInset( CGRectMake( 0, 0, container.bounds.size.width, container.bounds.size.height ), 0.1f, 0.1f );
-
+		
 		borderLayer.masksToBounds = YES;
-		borderLayer.cornerRadius = container.layer.cornerRadius;
-
+	//	borderLayer.cornerRadius = container.layer.cornerRadius;
+		
 		[container.layer insertSublayer:borderLayer atIndex:0];
 	}
-
+	
 	SamuraiRenderObject * renderer = container.renderer;
 	
 	if ( renderer )
@@ -162,22 +162,22 @@ static BOOL __enabled = NO;
 		if ( DomNodeType_Document == renderer.dom.type )
 		{
 			borderLayer.borderColor = [HEX_RGBA(0x000000, 1.0f) CGColor];
-			borderLayer.borderWidth = 1.0f;
+			borderLayer.borderWidth = 2.0f;
 		}
 		else if ( DomNodeType_Element == renderer.dom.type )
 		{
 			borderLayer.borderColor = [HEX_RGBA(0xd22042, 1.0f) CGColor];
-			borderLayer.borderWidth = 1.0f;
+			borderLayer.borderWidth = 2.0f;
 		}
 		else if ( DomNodeType_Text == renderer.dom.type )
 		{
 			borderLayer.borderColor = [HEX_RGBA(0x666666, 1.0f) CGColor];
-			borderLayer.borderWidth = 1.0f;
+			borderLayer.borderWidth = 2.0f;
 		}
 		else
 		{
 			borderLayer.borderColor = [HEX_RGBA(0xcccccc, 1.0f) CGColor];
-			borderLayer.borderWidth = 1.0f;
+			borderLayer.borderWidth = 2.0f;
 		}
 		
 		if ( [renderer.childs count] )
@@ -193,7 +193,7 @@ static BOOL __enabled = NO;
 	{
 		borderLayer.backgroundColor = [[UIColor clearColor] CGColor];
 		borderLayer.borderColor = [HEX_RGBA(0xcccccc, 1.0f) CGColor];
-		borderLayer.borderWidth = 0.5f;
+		borderLayer.borderWidth = 2.0f;
 	}
 	
 	[borderLayer setNeedsDisplay];

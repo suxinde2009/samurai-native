@@ -167,6 +167,9 @@
 
 @implementation ServiceInspectorWindow
 {
+	BOOL						_dragging;
+	NSTimer *					_timer;
+	
 	CGFloat						_rotateX;
     CGFloat						_rotateY;
     CGFloat						_distance;
@@ -184,8 +187,9 @@
 	self = [super initWithFrame:screenBound];
 	if ( self )
 	{
-		self.backgroundColor = [UIColor whiteColor];
+		self.backgroundColor = [UIColor blackColor];
 		self.windowLevel = UIWindowLevelStatusBar + 1.0f;
+		self.rootViewController = [[UIViewController alloc] init];
 
 		_panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(didPan:)];
 		[self addGestureRecognizer:_panGesture];
@@ -283,8 +287,8 @@
 //	depth = [self buildSublayersForView:container origin:CGPointZero depth:depth];
 //	depth = [self buildSublayersForView:wrapperView origin:CGPointZero depth:depth];
 //	depth = [self buildSublayersForView:navigationBar origin:CGPointZero depth:depth];
-	
-	[self styleSublayersWithMaxDepth:depth];
+
+	[self transformLayers:YES];
 }
 
 - (CGFloat)buildSublayersForView:(UIView *)view origin:(CGPoint)origin depth:(CGFloat)depth
@@ -376,7 +380,7 @@
 	
 	CGFloat maxDepth = depth;
 
-	for ( UIView * subview in view.subviews )
+	for ( UIView * subview in [view.subviews reverseObjectEnumerator] )
 	{
 		CGFloat subDepth = [self buildSublayersForView:subview origin:viewFrame.origin depth:nextDepth];
 		
@@ -387,19 +391,6 @@
 	}
 
 	return maxDepth;
-}
-
-- (void)styleSublayersWithMaxDepth:(NSUInteger)depth
-{
-//	NSArray * subviewsCopy = [NSArray arrayWithArray:self.subviews];
-//	
-//	for ( ServiceImageView * subview in subviewsCopy )
-//	{
-//		if ( [subview isKindOfClass:[ServiceImageView class]] )
-//		{
-//			subview.layer.opacity = (subview.depth * 1.0f) / (depth * 1.0f);
-//		}
-//	}
 }
 
 - (void)removeLayers
@@ -508,12 +499,28 @@
 - (void)showStep3
 {
 	_animating = NO;
+	
+	if ( nil == _timer )
+	{
+		_timer = [NSTimer scheduledTimerWithTimeInterval:1.0f
+												  target:self
+												selector:@selector(refreshLayers)
+												userInfo:nil
+												 repeats:YES];
+	}
 }
 
 #pragma mark -
 
 - (void)hide
 {
+	if ( _timer )
+	{
+		[_timer invalidate];
+
+		_timer = nil;
+	}
+	
 	[self hideStep1];
 }
 
@@ -567,26 +574,44 @@
 
 #pragma mark -
 
+- (void)refreshLayers
+{
+	if ( _dragging )
+		return;
+	
+	if ( _animating )
+		return;
+
+	[self removeLayers];
+	[self buildLayers];
+}
+
+#pragma mark -
+
 - (void)didClicked:(UITapGestureRecognizer *)tapGesture
 {
-	if ( UIGestureRecognizerStateEnded == tapGesture.state )
-	{
-		if ( tapGesture.view && [tapGesture.view isKindOfClass:[ServiceImageView class]] )
-		{
-			ServiceImageView * view = (ServiceImageView *)tapGesture.view;
-		}
-	}
+//	if ( UIGestureRecognizerStateEnded == tapGesture.state )
+//	{
+//		if ( tapGesture.view && [tapGesture.view isKindOfClass:[ServiceImageView class]] )
+//		{
+//			ServiceImageView * view = (ServiceImageView *)tapGesture.view;
+//		}
+//	}
 }
 
 - (void)didPan:(UIPanGestureRecognizer *)panGesture
 {
 	if ( UIGestureRecognizerStateBegan == panGesture.state )
 	{
+		_dragging = YES;
+		
 		_panOffset.x = _rotateY;
 		_panOffset.y = _rotateX * -1.0f;
 	}
 	else if ( UIGestureRecognizerStateChanged == panGesture.state )
 	{
+		_dragging = YES;
+
 		CGPoint offset = [panGesture translationInView:self];
 		
 		_rotateY = _panOffset.x + offset.x * 0.5f;
@@ -596,10 +621,14 @@
 	}
 	else if ( UIGestureRecognizerStateEnded == panGesture.state )
 	{
+		_dragging = NO;
+
 		[self transformLayers:NO];
 	}
 	else if ( UIGestureRecognizerStateCancelled == panGesture.state )
 	{
+		_dragging = NO;
+		
 		[self transformLayers:NO];
 	}
 }
@@ -608,10 +637,14 @@
 {
 	if ( UIGestureRecognizerStateBegan == pinchGesture.state )
 	{
+		_dragging = YES;
+		
 		_pinchOffset = _distance;
 	}
 	else if ( UIGestureRecognizerStateChanged == pinchGesture.state )
 	{
+		_dragging = YES;
+
 		_distance = _pinchOffset + (pinchGesture.scale - 1.0f);
 		_distance = (_distance < -5.0f ? -5.0f : (_distance > 0.5f ? 0.5f : _distance));
 		
@@ -619,10 +652,14 @@
 	}
 	else if ( UIGestureRecognizerStateEnded == pinchGesture.state )
 	{
+		_dragging = NO;
+		
 		[self transformLayers:NO];
 	}
 	else if ( UIGestureRecognizerStateCancelled == pinchGesture.state )
 	{
+		_dragging = NO;
+		
 		[self transformLayers:NO];
 	}
 }

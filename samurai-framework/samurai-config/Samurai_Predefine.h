@@ -81,6 +81,7 @@
 #import <fcntl.h>
 #import <dirent.h>
 #import <dlfcn.h>
+#import <spawn.h>
 
 #import <mach-o/fat.h>
 #import <mach-o/dyld.h>
@@ -111,6 +112,7 @@
 
 	#import <UIKit/UIKit.h>
 	#import <UIKit/UIGestureRecognizerSubclass.h>
+	#import <CoreText/CoreText.h>
 	#import <Foundation/Foundation.h>
 	#import <QuartzCore/QuartzCore.h>
 	#import <AudioToolbox/AudioToolbox.h>
@@ -172,7 +174,7 @@
 #endif
 
 #ifndef	TODO
-#define TODO( X )			_Pragma(macro_cstr(message("✖✖✖✖✖✖✖✖✖✖✖✖✖✖✖✖✖✖ TODO: " X)))
+#define TODO( X )			_Pragma(macro_cstr(message("TODO: " X)))
 #endif
 
 #ifndef	EXTERN_C

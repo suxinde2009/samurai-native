@@ -36,7 +36,34 @@
 // ----------------------------------
 // Source code
 // ----------------------------------
+#pragma mark -
 
+@implementation SamuraiQueue
+
+@def_singleton( SamuraiQueue )
+
+@def_prop_strong( dispatch_queue_t,	serial );
+@def_prop_strong( dispatch_queue_t,	concurrent );
+
+- (id)init
+{
+    self = [super init];
+    if ( self )
+    {
+        _serial = dispatch_queue_create( "com.samurai.serial", DISPATCH_QUEUE_SERIAL );
+        _concurrent = dispatch_queue_create( "com.samurai.concurrent", DISPATCH_QUEUE_CONCURRENT );
+    }
+
+    return self;
+}
+
+- (void)dealloc
+{
+	_serial = nil;
+	_concurrent = nil;
+}
+
+@end
 // ----------------------------------
 // Unit test
 // ----------------------------------
@@ -49,26 +76,14 @@ TEST_CASE( Core, Thread )
 {
 }
 
-DESCRIBE( thread )
+DESCRIBE( before )
 {
-//	__block int __flag = 0;
-//
-//	dispatch_async_background( ^{
-//		
-//		EXPECTED( NO == [NSThread isMainThread] );
-//		EXPECTED( 0 == __flag );
-//		
-//		__flag = 1;
-//
-//		dispatch_async_foreground( ^{
-//
-//			EXPECTED( YES == [NSThread isMainThread] );
-//			EXPECTED( 1 == __flag );
-//			
-//			__flag = 0;
-//		});
-//	});
 }
+
+DESCRIBE( after )
+{
+}
+
 TEST_CASE_END
 
 #endif	// #if __SAMURAI_TESTING__

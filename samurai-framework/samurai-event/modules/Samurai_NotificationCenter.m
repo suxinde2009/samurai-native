@@ -116,6 +116,16 @@
 	}
 }
 
+- (void)removeObserver:(id)observer
+{
+	for ( NSMutableArray * observers in _map.allValues )
+	{
+		[observers removeObject:observer];
+	}
+
+	[[NSNotificationCenter defaultCenter] removeObserver:observer];
+}
+
 - (void)handleNotification:(SamuraiNotification *)notification
 {
 	NSMutableArray * observers = [_map objectForKey:notification.name];
@@ -140,8 +150,15 @@
 #if __SAMURAI_TESTING__
 
 TEST_CASE( Event, NotificationCenter )
+
+DESCRIBE( before )
 {
 }
+
+DESCRIBE( after )
+{
+}
+
 TEST_CASE_END
 
 #endif	// #if __SAMURAI_TESTING__

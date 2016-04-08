@@ -26,13 +26,49 @@
     self.model = [MovieListModel new];
     [self.model addSignalResponder:self];
     [self.model modelLoad];
-    
+	
+	@weakify( self )
+	
+	self.onSignal( RefreshCollectionView.eventPullToRefresh, ^{
+		
+		@strongify( self );
+		
+		[self refresh];
+	});
+
+	self.onSignal( RefreshCollectionView.eventLoadMore, ^{
+
+		@strongify( self );
+
+		[self loadMore];
+	});
+
+	self.onSignal( MovieListModel.eventLoading, ^{
+		
+	//	@strongify( self );
+	});
+
+	self.onSignal( MovieListModel.eventLoaded, ^{
+
+		@strongify( self );
+		
+		[self.list stopLoading];
+		[self reloadData];
+	});
+
+	self.onSignal( MovieListModel.eventError, ^{
+		
+		@strongify( self );
+		
+		[self.list stopLoading];
+	});
+	
     self.edgesForExtendedLayout = UIRectEdgeNone;
     self.extendedLayoutIncludesOpaqueBars = NO;
     self.modalPresentationCapturesStatusBarAppearance = NO;
     self.automaticallyAdjustsScrollViewInsets = YES;
     
-    [self loadViewTemplate:@"/www/html/movies-index.html"];
+    [self loadTemplate:@"/www/html/movies-index.html"];
 }
 
 - (void)viewDidLayoutSubviews
@@ -42,7 +78,7 @@
 
 - (void)dealloc
 {
-    [self unloadViewTemplate];
+    [self unloadTemplate];
 }
 
 #pragma mark -
@@ -54,6 +90,7 @@
 - (void)onTemplateLoaded
 {
     [self refresh];
+	[self reloadData];
 }
 
 - (void)onTemplateFailed
@@ -87,66 +124,39 @@
 
 - (void)reloadData
 {
-    self[@"list"] = @{
-                      @"movies" : ({
-                          
-                          NSMutableArray * movies = [NSMutableArray array];
-                          
-                          for ( MOVIE * movie in _model.movies )
-                          {
-                              [movies addObject:@{
-                                                  @"cover" : movie.posters.thumbnail ?: @"",
-                                                  @"title" : movie.title ?: @"",
-                                                  @"year" : @(movie.year) ?: @"",
-                                                  @"critics" : @(movie.ratings.critics_score) ?: @"",
-                                                 }];
-                          }
-                          
-                          movies;
-                      })
+	self.scope[@"list" ] = @{
+								  
+		  @"movies" : ({
+			  
+			  NSMutableArray * movies = [NSMutableArray array];
+			  
+			  for ( MOVIE * movie in _model.movies )
+			  {
+				  [movies addObject:@{
+									  @"cover" : movie.posters.thumbnail ?: @"",
+									  @"title" : movie.title ?: @"",
+									  @"year" : @(movie.year) ?: @"",
+									  @"critics" : @(movie.ratings.critics_score) ?: @"",
+									 }];
+			  }
+			  
+			  movies;
+		  })
+		  
     };
-    
+
     [_list reloadData];
 }
 
 #pragma mark -
 
-handleSignal( view_cover )
+- (void)viewCover:(SamuraiSignal *)signal
 {
     MOVIE * movie = [_model.movies objectAtIndex:signal.sourceIndexPath.row];
     MovieViewController * vc = [MovieViewController new];
     vc.movie = movie;
+
     [self.navigationController pushViewController:vc animated:YES];
-}
-
-#pragma mark -
-
-handleSignal( RefreshCollectionView, eventPullToRefresh )
-{
-    [self refresh];
-}
-
-handleSignal( RefreshCollectionView, eventLoadMore )
-{
-    [self loadMore];
-}
-
-#pragma mark -
-
-handleSignal( MovieListModel, eventLoading )
-{
-}
-
-handleSignal( MovieListModel, eventLoaded )
-{
-    [_list stopLoading];
-    
-    [self reloadData];
-}
-
-handleSignal( MovieListModel, eventError )
-{
-    [_list stopLoading];
 }
 
 @end

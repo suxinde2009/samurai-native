@@ -41,25 +41,8 @@
 
 @implementation NSObject(SignalResponder)
 
-@def_prop_dynamic( SamuraiEventBlock, onSignal );
-
-#pragma mark -
-
-hookAfter( load, SignalResponder )
-{
-}
-
-hookBefore( unload, SignalResponder )
-{
-	NSMutableArray * responders = [self getAssociatedObjectForKey:"signalResponders"];
-
-	if ( responders )
-	{
-		[responders removeAllObjects];
-		
-		[self removeAssociatedObjectForKey:"signalResponders"];
-	}
-}
+@def_prop_dynamic( SamuraiEventBlock,	onSignal );
+@def_prop_dynamic( NSMutableArray *,	userResponders );
 
 #pragma mark -
 
@@ -97,91 +80,12 @@ hookBefore( unload, SignalResponder )
 
 - (id)signalResponders
 {
-	const char * storeKey = "signalResponders";
-	
-	NSMutableArray * responders = [self getAssociatedObjectForKey:storeKey];
-	if ( nil == responders )
-	{
-		responders = [NSMutableArray nonRetainingArray];
-		[self retainAssociatedObject:responders forKey:storeKey];
-	}
-	return responders;
+	return [self userResponders];
 }
 
 - (id)signalAlias
 {
 	return nil;
-}
-
-- (BOOL)hasSignalResponder:(id)obj
-{
-	NSObject *		object = [self signalResponders];
-	EncodingType	objectType = [SamuraiEncoding typeOfObject:object];
-	
-	if ( nil == object )
-	{
-		return NO;
-	}
-	else
-	{
-		if ( EncodingType_Array == objectType )
-		{
-			NSArray * responders = (NSArray *)object;
-			
-			for ( id responder in responders )
-			{
-				if ( responder == obj )
-				{
-					return YES;
-				}
-			}
-		}
-		else
-		{
-			if ( obj == object )
-			{
-				return YES;
-			}
-		}
-	}
-
-	return NO;
-}
-
-- (void)addSignalResponder:(id)obj
-{
-	NSObject * object = [self signalResponders];
-	if ( object && [object isKindOfClass:[NSMutableArray class]] )
-	{
-		NSMutableArray * responders = (NSMutableArray *)object;
-		if ( NO == [responders containsObject:obj] )
-		{
-			[responders addObject:obj];
-		}
-	}
-}
-
-- (void)removeSignalResponder:(id)obj
-{
-	NSObject * object = [self signalResponders];
-	if ( object && [object isKindOfClass:[NSMutableArray class]] )
-	{
-		NSMutableArray * responders = (NSMutableArray *)object;
-		if ( [responders containsObject:obj] )
-		{
-			[responders removeObject:obj];
-		}
-	}
-}
-
-- (void)removeAllSignalResponders
-{
-	NSObject * object = [self signalResponders];
-	if ( object && [object isKindOfClass:[NSMutableArray class]] )
-	{
-		NSMutableArray * responders = (NSMutableArray *)object;
-		[responders removeAllObjects];
-	}
 }
 
 - (NSString *)signalNamespace
@@ -198,6 +102,84 @@ hookBefore( unload, SignalResponder )
 {
 	return [NSString stringWithFormat:@"%@", [[self class] description]];
 }
+
+#pragma mark -
+
+- (id)userRespondersOrCreate
+{
+	const char * storeKey = "NSObject.userResponders";
+	
+	NSMutableArray * responders = [self getAssociatedObjectForKey:storeKey];
+	
+	if ( nil == responders )
+	{
+		responders = [NSMutableArray nonRetainingArray];
+		
+		[self retainAssociatedObject:responders forKey:storeKey];
+	}
+	return responders;
+}
+
+- (NSMutableArray *)userResponders
+{
+	const char * storeKey = "NSObject.userResponders";
+	
+	return [self getAssociatedObjectForKey:storeKey];
+}
+
+#pragma mark -
+
+- (BOOL)hasSignalResponder:(id)obj
+{
+	NSMutableArray * responders = [self userResponders];
+	
+	if ( nil == responders )
+	{
+		return NO;
+	}
+
+	for ( id responder in responders )
+	{
+		if ( responder == obj )
+		{
+			return YES;
+		}
+	}
+
+	return NO;
+}
+
+- (void)addSignalResponder:(id)obj
+{
+	NSMutableArray * responders = [self userRespondersOrCreate];
+	
+	if ( responders && NO == [responders containsObject:obj] )
+	{
+		[responders addObject:obj];
+	}
+}
+
+- (void)removeSignalResponder:(id)obj
+{
+	NSMutableArray * responders = [self userResponders];
+	
+	if ( responders && [responders containsObject:obj] )
+	{
+		[responders removeObject:obj];
+	}
+}
+
+- (void)removeAllSignalResponders
+{
+	NSMutableArray * responders = [self userResponders];
+	
+	if ( responders )
+	{
+		[responders removeAllObjects];
+	}
+}
+
+#pragma mark -
 
 - (void)handleSignal:(SamuraiSignal *)that
 {
@@ -244,6 +226,8 @@ hookBefore( unload, SignalResponder )
 #pragma mark -
 
 @implementation SamuraiSignal
+
+@def_joint( stateChanged );
 
 //@def_prop_unsafe( id,						foreign );
 //@def_prop_strong( NSString *,				prefix );
@@ -326,7 +310,7 @@ BASE_CLASS( SamuraiSignal )
 
 - (void)deepCopyFrom:(SamuraiSignal *)right
 {
-	[super deepCopyFrom:right];
+//	[super deepCopyFrom:right];
 	
 //	self.foreign			= right.foreign;
 	self.source				= right.source;
@@ -337,7 +321,7 @@ BASE_CLASS( SamuraiSignal )
 	self.name				= [right.name copy];
 //	self.prefix				= [right.prefix copy];
 	self.object				= right.object;
-	
+
 	self.initTimeStamp		= right.initTimeStamp;
 	self.sendTimeStamp		= right.sendTimeStamp;
 	self.arriveTimeStamp	= right.arriveTimeStamp;
@@ -348,11 +332,13 @@ BASE_CLASS( SamuraiSignal )
 
 - (NSString *)prettyName
 {
-	NSString * name = [self.name stringByReplacingOccurrencesOfString:@"signal." withString:@""];
-	NSString * normalizedName = name;
-	normalizedName = [normalizedName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
-	normalizedName = [normalizedName stringByReplacingOccurrencesOfString:@":" withString:@"_"];
-	return normalizedName;
+//	NSString * name = [self.name stringByReplacingOccurrencesOfString:@"signal." withString:@""];
+//	NSString * normalizedName = name;
+//	normalizedName = [normalizedName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
+//	normalizedName = [normalizedName stringByReplacingOccurrencesOfString:@":" withString:@"_"];
+//	return normalizedName;
+
+	return self.name;
 }
 
 - (NSString *)description
@@ -425,19 +411,19 @@ BASE_CLASS( SamuraiSignal )
 
 - (BOOL)changeState:(SignalState)newState
 {
-	static const char * __states[] = {
-		"!Inited",
-		"!Sending",
-		"!Arrived",
-		"!Dead"
-	};
+//	static const char * __states[] = {
+//		"!Inited",
+//		"!Sending",
+//		"!Arrived",
+//		"!Dead"
+//	};
 	
 	if ( newState == _state )
 		return NO;
 
 	triggerBefore( self, stateChanged );
 
-	INFO( @"Signal '%@', state %d -> %d", self.prettyName, _state, newState );
+	PERF( @"Signal '%@', state %d -> %d", self.prettyName, _state, newState );
 
 	_state = newState;
 

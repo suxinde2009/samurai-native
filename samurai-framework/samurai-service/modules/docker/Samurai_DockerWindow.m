@@ -48,6 +48,7 @@
 	//	self.alpha = 0.75f;
 		self.backgroundColor = [UIColor clearColor];
 		self.windowLevel = UIWindowLevelStatusBar + 2.0f;
+        self.rootViewController = [[UIViewController alloc] init];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self
 												 selector:@selector(orientationWillChange)
@@ -145,9 +146,15 @@
 #if __SAMURAI_TESTING__
 
 TEST_CASE( Service, DockerWindow )
+
+DESCRIBE( before )
 {
-	//	TODO( @"test case" )
 }
+
+DESCRIBE( after )
+{
+}
+
 TEST_CASE_END
 
 #endif	// #if __SAMURAI_TESTING__

@@ -30,6 +30,7 @@
 
 #import "Samurai_Core.h"
 #import "Samurai_Event.h"
+#import "Samurai_View.h"
 
 #if (TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR)
 
@@ -64,6 +65,10 @@
 - (void)unload;
 
 - (void)main;
+
+- (SamuraiActivity *)activityFromString:(NSString *)string;
+- (SamuraiActivityStack *)activityStackFromArray:(NSArray *)array;
+- (SamuraiActivityStackGroup *)activityStackGroupFromDictionary:(NSDictionary *)dict;
 
 @end
 

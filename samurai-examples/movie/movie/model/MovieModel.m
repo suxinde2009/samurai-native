@@ -9,6 +9,9 @@
 #import "MovieModel.h"
 #import "Movies.h"
 
+@interface MovieModel ()
+@end
+
 @implementation MovieModel
 
 @def_signal( eventLoading )
@@ -59,7 +62,7 @@
     
     api.req.id = self.id;
     
-    api.whenUpdate = ^( GET_A_MOVIE_RESPONSE * resp, id error ) {
+    api.whenUpdated = ^( GET_A_MOVIE_RESPONSE * resp, id error ) {
         
         @strongify( self );
         
@@ -76,7 +79,7 @@
             [self sendSignal:self.eventError];
         }
     };
-    
+
     [api send];
     
     [self sendSignal:self.eventLoading];
